@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets
 
 import io.nats.client.Message
 import play.api.libs.json.{JsValue, Json}
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 import java.time.{Duration => JDuration}
 
 package object ext {

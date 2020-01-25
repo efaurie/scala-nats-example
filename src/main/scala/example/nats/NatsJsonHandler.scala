@@ -1,23 +1,20 @@
 package example.nats
 
+import example.model.serdes.JsonSerde
 import io.nats.client.{Message, MessageHandler}
-import play.api.libs.json.Reads
 
-final case class NatsJsonDecodeException(private val message: String = "", private val cause: Throwable = None.orNull)
-  extends Exception(message, cause)
 
 object NatsJsonHandler {
-  def apply[T](func: T => Unit)(implicit reader: Reads[T]): NatsJsonHandler[T] = {
-    new NatsJsonHandler[T](func)(reader)
+  def apply[A](func: A => Unit)(implicit rx: JsonSerde[A]): NatsJsonHandler[A] = {
+    new NatsJsonHandler[A](func)
   }
 }
 
-class NatsJsonHandler[T](func: T => Unit)(implicit reader: Reads[T]) extends MessageHandler {
+class NatsJsonHandler[A](func: A => Unit)(implicit rx: JsonSerde[A]) extends MessageHandler {
   import example.ext._
 
   override def onMessage(msg: Message): Unit = {
-    val parsedMsg: T = reader
-      .reads(msg.asJson)
+    val parsedMsg: A = rx.unmarshal(msg.getData)
       .getOrElse { throw NatsJsonDecodeException(s"Failed to decode message: ${msg.toHex}") }
 
     func(parsedMsg)
