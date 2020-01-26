@@ -3,13 +3,12 @@ package example
 import java.time.Instant
 
 import example.model.StringMessage
-import example.model.serdes.JsonSerde
 import example.nats.{Nats, NatsJsonHandler}
 
 import scala.concurrent.duration._
 
 object BasicExample extends App {
-  import example.model.StringMessageJson._
+  import example.model.serdes._
   implicit val serde: JsonSerde[StringMessage] = JsonSerde[StringMessage]()
 
   val subject: String = "scala.nats.example"

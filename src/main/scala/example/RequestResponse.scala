@@ -2,9 +2,9 @@ package example
 
 import java.time.Instant
 
-import example.model.serdes.JsonSerde
 import example.model.{Ack, StringMessage}
 import example.nats.Nats
+import example.server.ExampleServer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, Future}
@@ -13,8 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 object RequestResponse extends App {
   import example.ext._
-  import example.model.AckJson._
-  import example.model.StringMessageJson._
+  import example.model.serdes._
   implicit val msgSerde: JsonSerde[StringMessage] = JsonSerde[StringMessage]()
   implicit val ackSerde: JsonSerde[Ack] = JsonSerde[Ack]()
 

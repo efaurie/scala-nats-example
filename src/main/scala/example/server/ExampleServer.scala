@@ -1,11 +1,11 @@
-package example
+package example.server
 
 import java.time.Instant
 
 import example.model.AckJson._
 import example.model.StringMessageJson._
-import example.model.{Ack, StringMessage}
 import example.model.serdes.JsonSerde
+import example.model.{Ack, StringMessage}
 import example.nats.{Nats, NatsJsonEndpoint}
 
 object ExampleServer {
