@@ -7,10 +7,12 @@ import example.model.{Ack, StringMessage}
 import example.nats.Nats
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 object RequestResponse extends App {
+  import example.ext._
   import example.model.AckJson._
   import example.model.StringMessageJson._
   implicit val msgSerde: JsonSerde[StringMessage] = JsonSerde[StringMessage]()
@@ -27,19 +29,21 @@ object RequestResponse extends App {
     case Failure(e) => throw e
   }
 
-  // Publish 10 StringMessage's, this will automatically convert StringMessage -> JSON -> UTF8 -> Bytes
-  (1 to 10).map { seqNum =>
-    nats.request[StringMessage, Ack](
-      "ExampleServer.ack", StringMessage(Instant.now, seqNum, s"This is example $seqNum!")
-    ).onComplete { printReply }
+  timeit {
+    val ackFutures: Seq[Future[Any]] = (1 to 10).map { seqNum =>
+      nats.request[StringMessage, Ack](
+        "ExampleServer.ack", StringMessage(Instant.now, seqNum, s"This is example $seqNum!")
+      ).transform { reply => printReply(reply); reply }
+    }
+
+    val replyFutures: Seq[Future[Any]] = (11 to 3000).map { seqNum =>
+      nats.request[StringMessage, StringMessage](
+        "ExampleServer.reply", StringMessage(Instant.now, seqNum, s"This is example $seqNum!")
+      ).transform { reply => printReply(reply); reply }
+    }
+
+    Await.result(Future.sequence(replyFutures ++ ackFutures), Duration.Inf)
   }
 
-  (11 to 20).map { seqNum =>
-    nats.request[StringMessage, StringMessage](
-      "ExampleServer.reply", StringMessage(Instant.now, seqNum, s"This is example $seqNum!")
-    ).onComplete { printReply }
-  }
-
-  // Give it three seconds to drain all messages and complete
-  nats.drainAndClose(3 seconds)
+  nats.drainAndClose(1 seconds)
 }
